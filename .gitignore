@@ -1,3 +1,6 @@
 .idea
 .env
 bot/db.sqlite3
+.__pycache__
+bot/__pycache__
+bot/db/__pycache__
