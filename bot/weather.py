@@ -1,14 +1,30 @@
 import aiohttp
-import asyncio
 import datetime
 import locale
 import os
 
-locale.setlocale(locale.LC_TIME, 'uk_UA.UTF-8')
-# api_key = str(os.getenv("API_KEY"))
-api_key = "7819c42b0c4a4e0ebf0153616230810"
+try:
+    locale.setlocale(locale.LC_TIME, 'uk_UA.UTF-8')
+except locale.Error:
+    locale.setlocale(locale.LC_TIME, 'C')
 
-async def weather_by_city(city: str, days: int):
+api_key = str(os.getenv("API_KEY"))
+
+
+async def get_weather_by_city_for_date(city: str, data):
+    async with aiohttp.ClientSession() as session:
+        url = f"https://api.weatherapi.com/v1/forecast.json?" \
+              f"key={api_key}" \
+              f"&q={city}" \
+              f"&dt={data}" \
+              f"&lang=uk"
+
+        async with session.get(url) as resp:
+            data = await resp.json()
+    return data
+
+
+async def get_weather_by_city_for_future_days(city: str, days: int):
     async with aiohttp.ClientSession() as session:
         url = f"https://api.weatherapi.com/v1/forecast.json?" \
               f"key={api_key}" \
@@ -21,7 +37,7 @@ async def weather_by_city(city: str, days: int):
     return data
 
 
-async def weather_history(city: str, days: int):
+async def get_weather_by_city_for_last_days(city: str, days: int):
     async with aiohttp.ClientSession() as session:
         date = datetime.date.today() - datetime.timedelta(days=days)
         end_date = datetime.date.today()
@@ -38,11 +54,10 @@ async def weather_history(city: str, days: int):
         return data
 
 
-async def weather_for_week(city: str):
+async def get_weather_for_week(city: str):
     week_day = datetime.date.weekday(datetime.date.today())
-    days = 7 - week_day
-    history_weather = await weather_history(city, days)
-    future_weather = await weather_by_city(city, days)
+    history_weather = await get_weather_by_city_for_last_days(city, week_day)
+    future_weather = await get_weather_by_city_for_future_days(city, 7 - week_day)
     result = []
 
     for i in history_weather["forecast"]["forecastday"][:-1]:
@@ -60,9 +75,3 @@ async def weather_for_week(city: str):
         result.append(row)
 
     return '\n'.join(result)
-
-
-# print(asyncio.run(weather_for_week("Чернигов")))
-
-
-
